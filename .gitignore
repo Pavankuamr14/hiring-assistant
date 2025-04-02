@@ -1,0 +1,8 @@
+.env
+myenv
+# Ignore config files with secrets or sensitive info  
+config.py  # If it contains sensitive information  
+
+__pycache__/  
+*.pyc  
+*.pyo  
