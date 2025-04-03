@@ -348,9 +348,22 @@
 Chatbot logic for the TalentScout Hiring Assistant.
 """
 import os
+import subprocess
+
+# Ensure required packages are installed
+required_packages = ["python-dotenv", "google-generativeai"]
+
+for package in required_packages:
+    try:
+        __import__(package.replace("-", "_"))  # Try importing the package
+    except ImportError:
+        subprocess.run(["pip", "install", package])
+
+import google.generativeai as genai  # Now import your required module
+
 import time
 from typing import Dict, List, Tuple, Any, Optional
-import google.generativeai as genai
+
 
 from config import (
     GEMINI_API_KEY, 
