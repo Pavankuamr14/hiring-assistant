@@ -13,7 +13,7 @@ GEMINI_API_KEY = st.secrets["GEMINI_API_KEY"]
 
 # Gemini API configuration
 
-GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')  
+# GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')  
 
 GEMINI_MODEL = "gemini-1.5-pro-latest"  # Adjust to the appropriate model
 
