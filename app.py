@@ -18,7 +18,7 @@ st.set_page_config(
     layout="centered"
 )
 
-# Custom CSS for better UI with text wrapping fixes
+# Custom CSS for better UI with text wrapping fixes and better color contrast
 st.markdown("""
 <style>
 .chat-message {
@@ -31,10 +31,12 @@ st.markdown("""
 .chat-message.user {
     background-color: #F0F2F6;
     border-left: 5px solid #7E57C2;
+    color: #111; /* Dark text for light backgrounds */
 }
 .chat-message.assistant {
     background-color: #FAFAFA;
     border-left: 5px solid #26A69A;
+    color: #111; /* Dark text for light backgrounds */
 }
 .chat-message .message-content {
     display: flex;
