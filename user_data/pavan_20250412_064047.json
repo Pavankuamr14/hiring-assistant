@@ -1,0 +1,38 @@
+{
+    "name": "abhi ram makkena",
+    "email": "pavan@gmail.com",
+    "phone": "8976401938",
+    "experience": "2 years",
+    "tech_stack": [
+        "pytorch",
+        "python"
+    ],
+    "submission_time": "2025-04-12 06:40:47",
+    "interview_status": "complete",
+    "technical_responses": {
+        "question_1": {
+            "question": "1.**Fundamentals:** Explain the difference between `torch.Tensor` and `torch.autograd.Variable` in PyTorch (pre-version",
+            "answer": ""
+        },
+        "question_2": {
+            "question": "1.0). What is the current recommended practice?  This assesses basic understanding of PyTorch's core data structures and how automatic differentiation is handled.",
+            "answer": ""
+        },
+        "question_3": {
+            "question": "2.**Scenario-based/Practical Application:**  Imagine you're training a convolutional neural network (CNN) for image classification.  You notice your model is overfitting. Describe at least three techniques you could implement in PyTorch to mitigate overfitting, and explain how each technique works. This tests their practical experience with training models and addressing common issues.",
+            "answer": ""
+        },
+        "question_4": {
+            "question": "3.**Advanced Concept:** Explain the purpose and mechanism of backpropagation in PyTorch. How does `torch.autograd` facilitate this process? This digs deeper into the automatic differentiation engine, crucial for understanding how PyTorch optimizes models.",
+            "answer": ""
+        },
+        "question_5": {
+            "question": "4.**Practical Application/Debugging:**  You're working on a project that involves loading a pre-trained model. After loading, you attempt to fine-tune it on a new dataset, but you encounter an error related to mismatched input sizes. Describe the debugging steps you would take to identify and resolve this issue. This question assesses practical experience with common PyTorch workflows.",
+            "answer": ""
+        },
+        "question_6": {
+            "question": "5.**Advanced Concept/Performance Optimization:**  Discuss the advantages and disadvantages of using GPUs for training deep learning models in PyTorch.  How can you leverage multiple GPUs with PyTorch?  What considerations are important for maximizing GPU utilization? This probes their understanding of hardware acceleration and performance optimization techniques.\n\nPlease provide your answers.",
+            "answer": ""
+        }
+    }
+}
