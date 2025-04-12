@@ -1,4 +1,3 @@
-
 """
 Configuration settings for the TalentScout Hiring Assistant application.
 """

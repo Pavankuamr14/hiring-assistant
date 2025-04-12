@@ -1,30 +1,32 @@
 # TalentScout Hiring Assistant
 
 ## Project Overview
-TalentScout Hiring Assistant is an intelligent chatbot designed to streamline the initial screening process for technical candidates. The chatbot helps recruitment agencies by automating the collection of candidate information and conducting preliminary technical assessments based on the candidate's declared tech stack.
+**TalentScout Hiring Assistant** is an intelligent chatbot built using the Gemini API to automate the initial screening process for technical candidates. It streamlines the hiring workflow by collecting candidate data and dynamically generating technical questions based on their tech stack.
 
 ## Key Features
-- **Information Collection:** Gathers essential candidate details including name, contact info, experience, and desired positions.
-- **Tech Stack Assessment:** Asks candidates to specify their technical skills.
-- **Dynamic Question Generation:** Creates tailored technical questions based on the candidate's tech stack.
-- **Coherent Conversation Flow:** Maintains context throughout the interaction.
-- **User-Friendly Interface:** Clean and intuitive Streamlit UI for seamless interaction.
-- **Data Export:** Ability to export conversation data for further analysis.
+- **Information Collection:** Gathers essential candidate details like name, contact info, experience, and desired position.
+- **Tech Stack Assessment:** Identifies technologies and tools the candidate is proficient in.
+- **Dynamic Question Generation:** Creates tailored technical questions based on the declared tech stack.
+- **Coherent Conversation Flow:** Maintains state throughout the interaction.
+- **User-Friendly Interface:** Clean Streamlit UI for smooth user experience.
+- **Data Export:** Saves all conversation data to JSON for review and analysis.
+
+---
 
 ## Installation Instructions
 
-### Clone the repository
+### Clone the Repository
 ```sh
-git clone https://github.com/yourusername/talentscout-hiring-assistant.git
-cd talentscout-hiring-assistant
+git clone https://github.com/Pavankuamr14/hiring-assistant.git
+cd hiring-assistant
 ```
 
-### Create a virtual environment
+### Create a Virtual Environment
 ```sh
 python -m venv venv
 ```
 
-### Activate the virtual environment
+### Activate the Virtual Environment
 **Windows:**
 ```sh
 venv\Scripts\activate
@@ -34,108 +36,116 @@ venv\Scripts\activate
 source venv/bin/activate
 ```
 
-### Install dependencies
+### Install Dependencies
 ```sh
 pip install -r requirements.txt
 ```
 
-### Set up your OpenAI API key
-Open `config.py` and replace `"your-api-key-here"` with your actual OpenAI API key.
+### Set Up Your Gemini API Key
+Open `config.py` and replace `"your-gemini-api-key"` with your actual Gemini API key.  
 Alternatively, create a `.env` file with:
-```sh
-OPENAI_API_KEY=your-actual-api-key
+```env
+GEMINI_API_KEY=your-actual-api-key
 ```
 
-### Run the application
+---
+
+## Usage Guide
+
+### Start the Application
 ```sh
 streamlit run app.py
 ```
 
-## Usage Guide
-
-### Start the application
-- Click the **"Start Conversation"** button to begin the interview process.
-
-### Candidate Information Collection
-- The chatbot will guide you through providing personal information.
-- Required details include: name, email, phone, experience, desired position, location, and tech stack.
+### Candidate Interaction
+- Click **"Start Conversation"** to begin.
+- The chatbot will ask for:
+  - Name
+  - Email
+  - Phone number
+  - Experience
+  - Desired position
+  - Location
+  - Tech stack
 
 ### Technical Assessment
-- Based on your tech stack, the chatbot will generate relevant technical questions.
-- Answer the questions to complete the assessment.
+- The bot generates questions based on your tech stack.
+- Provide answers directly in the chat interface.
 
-### End the Conversation
-- Type `exit`, `bye`, `quit`, or `end` to conclude the interview.
-- Once finished, you can download the conversation data as a JSON file.
+### Finish or Reset
+- Type `exit`, `bye`, `quit`, or `end` to finish.
+- Use the **"Reset Conversation"** button to restart the process.
 
-### Reset the Conversation
-- Use the **"Reset Conversation"** button to start over.
+---
 
 ## Technical Details
 
 ### Architecture
-- **Frontend:** Streamlit for the user interface.
-- **Backend Logic:** Python for conversation management and LLM integration.
-- **LLM Integration:** OpenAI GPT API for natural language processing.
+- **Frontend:** Streamlit
+- **Backend Logic:** Python with Gemini API integration
+- **LLM Integration:** Gemini API (from Google)
 
 ### Libraries Used
-- `streamlit`: Web application framework.
-- `openai`: Integration with OpenAI's language models.
-- `python-dotenv`: Environment variable management.
-- **Standard Python libraries:** `json`, `re`, `datetime`, etc.
+- `streamlit`
+- `google-generativeai` (for Gemini)
+- `python-dotenv`
+- Standard Python: `json`, `re`, `datetime`, etc.
 
-### Files Structure
-- **`app.py`**: Main Streamlit application entry point.
-- **`chatbot.py`**: Conversation management and LLM integration.
-- **`config.py`**: Configuration settings and prompts.
-- **`utils.py`**: Utility functions for data validation and formatting.
-- **`requirements.txt`**: Project dependencies.
+### File Structure
+- `app.py`: Streamlit app logic
+- `chatbot.py`: Manages chatbot logic and Gemini interactions
+- `config.py`: Stores prompts and API config
+- `utils.py`: Helper functions (validation, formatting, etc.)
+- `requirements.txt`: All dependencies
+
+---
 
 ## Prompt Design
-The prompt engineering approach focuses on guiding the LLM through a structured conversation flow:
 
 ### System Prompt
-- Sets the context and defines the chatbot's purpose and behavior.
-- Clearly outlines the information collection sequence.
-- Establishes the technical assessment workflow.
-- Maintains a professional yet friendly tone.
+- Sets the assistant’s personality and task.
+- Controls the flow for data collection and assessments.
+- Maintains clarity and a professional tone.
 
-### Information Collection Prompts
-- Direct prompts for gathering specific candidate details.
-- Each field has a dedicated prompt to ensure clarity.
-- Includes validation for critical fields like email and phone.
+### Information Prompts
+- Structured prompts to collect name, email, phone, etc.
+- Field-specific prompts and validations ensure clean data.
 
-### Tech Question Generation Prompt
-- Dynamic prompt that adapts to the candidate's tech stack.
-- Uses the candidate's declared skills to generate relevant questions.
-- Ensures questions cover fundamental to advanced concepts.
-- Balances theoretical knowledge and practical application questions.
+### Technical Assessment Prompts
+- Dynamically adapt to the tech stack.
+- Cover fundamental to advanced topics.
+- Include theoretical and practical questions.
+
+---
 
 ## Challenges & Solutions
 
-### Challenge 1: Maintaining Conversation Context
-**Solution:** Implemented a state-based conversation manager that tracks the current state and manages the flow of conversation, ensuring that the chatbot always knows where it is in the process and what information it has already collected.
+### 1. Maintaining Context
+**Solution:** Used session state to track flow and prevent repeated questions.
 
-### Challenge 2: Generating Relevant Technical Questions
-**Solution:** Crafted a specialized prompt that dynamically incorporates the candidate's tech stack and provides clear instructions to the LLM about the types and depth of questions to generate.
+### 2. Relevant Question Generation
+**Solution:** Engineered prompts using the user’s declared tech stack to personalize questions.
 
-### Challenge 3: Handling Invalid Inputs
-**Solution:** Added validation functions for critical fields like email and phone number, with feedback loops that ask the candidate to correct invalid inputs.
+### 3. Invalid Inputs
+**Solution:** Added validation checks (e.g., for phone and email formats).
 
-### Challenge 4: User Experience Design
-**Solution:** Designed a clean Streamlit interface with custom CSS for better visual hierarchy, clear message attribution, and timestamps to improve readability and usability.
+### 4. UI/UX Design
+**Solution:** Styled the Streamlit app for better readability and message flow.
 
-### Challenge 5: Error Handling and Resilience
-**Solution:** Implemented retry logic for API calls and graceful fallbacks in case of service disruptions to ensure the application remains functional even when facing external issues.
+### 5. Error Handling
+**Solution:** Added exception handling for API failures and logic bugs.
+
+---
 
 ## Future Enhancements
-- **Sentiment Analysis:** Detect candidate emotions during the interview.
-- **Multilingual Support:** Conduct interviews in multiple languages.
-- **Customizable Question Difficulty:** Adjust technical questions based on seniority level.
-- **Video Integration:** Add an option for video responses to certain questions.
-- **Enhanced Analytics:** Provide detailed analysis of candidate responses.
+- Sentiment analysis for emotion detection
+- Support for multilingual interviews
+- Custom question difficulty (junior, mid, senior)
+- Video/audio input for richer responses
+- Candidate analytics dashboard
+
+---
 
 ## License
-This project is created for educational purposes as part of an assignment.
+This project is built for educational purposes as part of an AI/ML Intern Assignment for TalentScout recruitment agency.
 
-This project was developed for the AI/ML Intern Assignment for TalentScout recruitment agency.
