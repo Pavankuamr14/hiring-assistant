@@ -1,0 +1,34 @@
+{
+    "name": "pavan sai kumar",
+    "email": "pavan@gmail.com",
+    "phone": "4567890312",
+    "experience": "3 years",
+    "tech_stack": [
+        "azure",
+        "aws"
+    ],
+    "submission_time": "2025-04-12 07:30:53",
+    "interview_status": "incomplete",
+    "technical_responses": {
+        "question_1": {
+            "question": "1.Scenario: You need to deploy a web application to Azure.  Describe the steps you would take using Azure App Service, including how you would handle continuous deployment from a Git repository.\n\n**AWS:**",
+            "answer": ""
+        },
+        "question_2": {
+            "question": "2.Compare and contrast EC2 and Lambda. When would you choose one over the other for deploying an application?  Consider factors like scaling, cost, and maintenance.\n\n**Bash Scripting:**",
+            "answer": ""
+        },
+        "question_3": {
+            "question": "3.Write a bash script that takes a directory as input and lists all files larger than 1MB, displaying their names and sizes.\n\n**Linux:**",
+            "answer": ""
+        },
+        "question_4": {
+            "question": "4.Explain the difference between a hard link and a symbolic link in Linux. What happens when you delete the original file in each case?\n\n**Maven:**",
+            "answer": ""
+        },
+        "question_5": {
+            "question": "5.Describe the purpose of the `pom.xml` file in Maven.  How do you manage dependencies and build profiles within this file?  Give an example of how you would include a dependency for a logging library.\n\n\nThese questions cover a range of difficulty levels and assess both theoretical understanding and practical application.  They also incorporate scenario-based questions to evaluate the candidate's ability to apply their knowledge in real-world situations.  The questions are distributed across the mentioned technologies ensuring a balanced assessment of the candidate's skillset.\n\nPlease provide your answers.",
+            "answer": ""
+        }
+    }
+}
