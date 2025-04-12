@@ -207,17 +207,65 @@ def extract_user_data(text):
     """
     extracted_data = {}
     text_lower = text.lower().strip()
-
+    
+    # First check if this is a direct response to a specific question based on context
+    # This helps prevent overwriting previously collected data
+    
+    # Check if this is a response to "What position(s) are you interested in applying for?"
+    position_question_patterns = [
+        "what position", "which position", "what role", "which role", 
+        "interested in applying", "looking to apply"
+    ]
+    position_response = any(pattern in text_lower for pattern in position_question_patterns)
+    
+    # Check if this is a response to "Could you please provide your full name?"
+    name_question_patterns = [
+        "your name", "full name", "provide name", "what is your name", 
+        "introduce yourself", "who are you"
+    ]
+    name_response = any(pattern in text_lower for pattern in name_question_patterns)
+    
+    # ======== Extract Position (if this is a position response) ========
+    if position_response:
+        # If this is a direct answer to position question, treat entire input as position
+        extracted_data["desired_position"] = text.strip()
+        # Skip name extraction in this case to prevent overwriting
+        return extracted_data
+    
     # ======== Extract Name ========
-    if "my name is" in text_lower:
+    # Check if this is likely a direct name response
+    if name_response or (len(text.split()) <= 3 and all(word.isalpha() for word in text.split())):
+        # Common job/tech terms that should not be treated as names
+        common_tech_terms = [
+            "python", "java", "javascript", "typescript", "developer", "engineer", 
+            "frontend", "backend", "fullstack", "machine learning", "data science",
+            "devops", "cloud", "architect", "analyst", "security", "designer",
+            "manager", "lead", "senior", "junior", "mid", "level", "software"
+        ]
+        
+        # Only consider it a name if it doesn't contain common tech terms
+        if not any(term in text_lower for term in common_tech_terms):
+            extracted_data["name"] = text.strip()
+    
+    # Special case for "my name is" format
+    elif "my name is" in text_lower:
         name_start = text_lower.find("my name is") + len("my name is")
         name_end = text_lower.find(".", name_start)
-        if name_end == -1:
-            name_end = len(text)
+        if name_end == -1:  # If no period found, try finding other punctuation or end of string
+            other_punctuation = [",", "\n", ";"]
+            end_positions = [text_lower.find(p, name_start) for p in other_punctuation]
+            # Filter out -1 positions (not found)
+            end_positions = [pos for pos in end_positions if pos != -1]
+            # Add end of string as a possible endpoint
+            end_positions.append(len(text_lower))
+            # Take the earliest position as the end point
+            name_end = min(end_positions) if end_positions else len(text_lower)
+        
         name = text[name_start:name_end].strip()
         if name:
             extracted_data["name"] = name
 
+    # Key-value format
     elif "name:" in text_lower:
         name_start = text_lower.find("name:") + len("name:")
         name_end = text_lower.find("\n", name_start)
@@ -227,17 +275,11 @@ def extract_user_data(text):
         if name:
             extracted_data["name"] = name
 
-    else:
-        # Fallback: only assume it's a name if it looks like one (two alphabetic words)
-        words = text.strip().split()
-        if len(words) >= 2 and all(word.isalpha() for word in words):
-            extracted_data["name"] = text.strip()
-
     # ======== Extract Email ========
     email_pattern = r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b'
     email_matches = re.findall(email_pattern, text)
     if email_matches:
-        extracted_data["email"] = email_matches[0]
+        extracted_data["email"] = email_matches[0].lower()
 
     # ======== Extract Phone ========
     phone_pattern = r'(\+\d{1,3}[-.\s]?)?(\d{3}[-.\s]?\d{3}[-.\s]?\d{4}|\(\d{3}\)[-.\s]?\d{3}[-.\s]?\d{4}|\d{10})'
@@ -259,24 +301,30 @@ def extract_user_data(text):
                 break
 
     # Standalone experience like "3", "3 years", "4 yrs"
-    if not found_exp:
-        standalone_match = re.search(r'\b(\d+)\s*(years|yrs)?\b', text_lower)
-        if standalone_match:
-            extracted_data["experience"] = standalone_match.group(1) + " years"
+    if not found_exp and text_lower.strip().isdigit():
+        extracted_data["experience"] = text.strip() + " years"
 
     # ======== Extract Desired Position ========
-    if "position" in text_lower or "role" in text_lower or "job" in text_lower:
-        match = re.search(r'(position|role|job)(\s*[:\-]?\s*)([a-zA-Z ]+)', text_lower)
-        if match:
-            position = match.group(3).strip().rstrip('.')
-            extracted_data["desired_position"] = position
+    # Only extract position if not already handled by direct response logic above
+    if "desired_position" not in extracted_data:
+        position_patterns = [
+            r'(position|role|job)(\s*[:\-]?\s*)([a-zA-Z ]+)',
+            r'(applying for|interested in)(\s+[a-z]*)?\s+([a-zA-Z ]+developer|[a-zA-Z ]+engineer|[a-zA-Z ]+designer)'
+        ]
+        
+        for pattern in position_patterns:
+            match = re.search(pattern, text_lower)
+            if match:
+                position = match.group(3).strip().rstrip('.')
+                extracted_data["desired_position"] = position
+                break
 
     # ======== Extract Tech Stack ========
     tech_keywords = [
         "python", "javascript", "java", "c#", "c++", "ruby", "php", "swift", "kotlin", "go", "rust", "typescript",
         "html", "css", "react", "angular", "vue", "node", "django", "flask", "spring",
         "aws", "azure", "gcp", "docker", "kubernetes", "sql", "nosql",
-        "mongodb", "postgresql", "mysql", "redis", "tensorflow", "pytorch"
+        "mongodb", "postgresql", "mysql", "redis", "tensorflow", "pytorch", "machine learning"
     ]
 
     found_techs = [tech for tech in tech_keywords if re.search(r'\b' + re.escape(tech) + r'\b', text_lower)]
@@ -284,24 +332,93 @@ def extract_user_data(text):
         extracted_data["tech_stack"] = found_techs
 
     return extracted_data
-
-
 def update_user_data(extracted_data):
     """
     Update Streamlit session_state with extracted user data.
-    Merges tech stack and updates other fields.
+    Merges tech stack and updates other fields without overwriting existing data.
     """
     for key, value in extracted_data.items():
+        # Always merge tech stack
         if key == "tech_stack" and isinstance(value, list):
             existing_stack = st.session_state.user_data.get(key, [])
             st.session_state.user_data[key] = list(set(existing_stack + value))
+        # Don't overwrite name if it already exists
+        elif key == "name" and st.session_state.user_data.get("name") and value:
+            # Only update if the existing name is very short (likely incomplete)
+            if len(st.session_state.user_data["name"].split()) < len(value.split()):
+                st.session_state.user_data[key] = value
+        # For other fields, only update if the value is meaningful
         elif value:
             st.session_state.user_data[key] = value
-
+def validate_tech_stack(tech_stack_input):
+    """
+    Validates if the provided tech stack contains valid technologies.
+    Returns (is_valid, recognized_techs).
+    """
+    # Define a comprehensive list of valid technologies
+    valid_technologies = [
+        # Programming languages
+        "python", "javascript", "typescript", "java", "c#", "c++", "c", "ruby", "php", "swift", 
+        "kotlin", "go", "rust", "scala", "perl", "r", "dart", "lua", "haskell", "objective-c",
+        
+        # Web frameworks/libraries
+        "react", "angular", "vue", "svelte", "jquery", "express", "django", "flask", "spring", 
+        "asp.net", "laravel", "ruby on rails", "rails", "fastapi", "next.js", "nuxt", "gatsby",
+        
+        # Mobile frameworks
+        "react native", "flutter", "ionic", "xamarin", "android", "ios", "swift ui", "jetpack compose",
+        
+        # Databases
+        "sql", "mysql", "postgresql", "mongodb", "sqlite", "oracle", "sql server", "cassandra", 
+        "redis", "dynamodb", "firebase", "supabase", "neo4j", "couchdb", "mariadb",
+        
+        # Cloud/DevOps
+        "aws", "azure", "gcp", "google cloud", "docker", "kubernetes", "terraform", "jenkins", 
+        "circleci", "travis", "github actions", "gitlab ci", "ansible", "prometheus", "grafana",
+        
+        # AI/ML
+        "tensorflow", "pytorch", "scikit-learn", "keras", "pandas", "numpy", "matplotlib",
+        "machine learning", "deep learning", "nlp", "computer vision", "data science",
+        
+        # Other common tools/tech
+        "git", "linux", "node", "npm", "yarn", "webpack", "graphql", "rest", "soap",
+        "html", "css", "sass", "less", "bootstrap", "tailwind", "material ui"
+    ]
+    
+    # Normalize input
+    if isinstance(tech_stack_input, str):
+        # Split by common separators
+        tech_items = re.split(r'[,;/|]+', tech_stack_input.lower())
+    elif isinstance(tech_stack_input, list):
+        tech_items = [item.lower() for item in tech_stack_input]
+    else:
+        return False, []
+    
+    # Clean up each item
+    tech_items = [item.strip() for item in tech_items if item.strip()]
+    
+    # Find recognized technologies
+    recognized_techs = []
+    for tech in tech_items:
+        if tech in valid_technologies or any(valid_tech in tech for valid_tech in valid_technologies):
+            recognized_techs.append(tech)
+    
+    # Calculate match percentage
+    if not tech_items:
+        return False, []
+    
+    match_percentage = len(recognized_techs) / len(tech_items)
+    
+    # Consider valid if at least 25% of items are recognized technologies
+    is_valid = match_percentage >= 0.25 and len(recognized_techs) > 0
+    
+    return is_valid, recognized_techs
 def save_user_data():
     """
     Save the user data to a JSON file.
-    Uses email in the filename (with timestamp) if available.
+    Creates a directory if it doesn't exist and names the file using email, name, or timestamp.
+    Format: EMAIL_YYYYMMDD_HHMMSS.json (e.g., pavan@gmail.com_20250412_072201.json)
+    Uses underscores as separators for Windows compatibility.
     """
     # Create directory if it doesn't exist
     data_dir = "user_data"
@@ -310,7 +427,14 @@ def save_user_data():
 
     # Prepare data for saving
     user_data = st.session_state.user_data.copy()
-    user_data["submission_time"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    
+    # Get current timestamp for submission time and filename
+    current_time = datetime.now()
+    user_data["submission_time"] = current_time.strftime("%Y-%m-%d %H:%M:%S")
+    
+    # Format timestamp for filename in the requested format: YYYYMMDD_HHMMSS
+    date_str = current_time.strftime('%Y%m%d')
+    time_str = current_time.strftime('%H%M%S')
 
     # Add technical responses
     if st.session_state.technical_responses_input:
@@ -324,17 +448,21 @@ def save_user_data():
                 }
         user_data["technical_responses"] = technical_responses
 
-    # Generate filename
-    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-
+    # Determine file name based on the requested format
     if "email" in user_data and user_data["email"]:
-        email_part = user_data["email"]
-        filename = f"{email_part}__{timestamp}.json"
+        # Convert email to lowercase as requested
+        email = user_data["email"].lower()
+        # Replace @ with "_at_" for better Windows compatibility
+        email = email.replace("@", "@")
+        # but it's not a good idea to use "@" in filenames, so we will replace it with "_at_"
+        filename = f"{email}_{date_str}_{time_str}.json"
     elif "name" in user_data and user_data["name"]:
+        # Fallback to name-based filename if email is not available
         name_part = user_data["name"].lower().replace(" ", "_")
-        filename = f"{name_part}__{timestamp}.json"
+        filename = f"{name_part}_{date_str}_{time_str}.json"
     else:
-        filename = f"candidate__{timestamp}.json"
+        # Last resort fallback
+        filename = f"candidate_{date_str}_{time_str}.json"
 
     # Save to file
     file_path = os.path.join(data_dir, filename)
@@ -342,7 +470,6 @@ def save_user_data():
         json.dump(user_data, f, indent=4)
 
     return file_path
-
 def handle_user_input():
     """Process user input from the text input field."""
     user_input = st.session_state.user_input
@@ -384,6 +511,61 @@ def handle_user_input():
             # Display thinking indicator
             thinking_placeholder = st.empty()
             thinking_placeholder.markdown("*Thinking...*")
+            
+            # Check if this is the last question about tech stack and user has confirmed their info
+            is_tech_stack_confirmation = False
+            if len(st.session_state.chat_history) >= 2:
+                last_assistant_msg = None
+                for msg in reversed(st.session_state.chat_history):
+                    if msg["role"] == "assistant":
+                        last_assistant_msg = msg["content"]
+                        break
+                
+                # Check if the last message was asking for confirmation and user said yes
+                if last_assistant_msg and "Is this information correct?" in last_assistant_msg and user_input.lower() in ["yes", "correct", "that's right", "right"]:
+                    is_tech_stack_confirmation = True
+            
+            # If user confirmed their info, validate tech stack before proceeding to technical questions
+            if is_tech_stack_confirmation and "tech_stack" in st.session_state.user_data:
+                # Validate the tech stack
+                tech_stack = st.session_state.user_data["tech_stack"]
+                
+                # Convert to string if it's a list
+                if isinstance(tech_stack, list):
+                    tech_stack_str = ", ".join(tech_stack)
+                else:
+                    tech_stack_str = str(tech_stack)
+                
+                is_valid, recognized_techs = validate_tech_stack(tech_stack_str)
+                
+                if not is_valid:
+                    # Tech stack is invalid, inform the user
+                    invalid_tech_response = (
+                        "I noticed that your tech stack information doesn't contain recognizable technologies. "
+                        "This makes it difficult for me to generate relevant technical questions. "
+                        "Would you like to provide a valid list of technologies you're proficient in? "
+                        "For example: Python, JavaScript, React, SQL, etc. Please click on the reset button to start over "
+                    )
+                    
+                    # Remove thinking indicator
+                    thinking_placeholder.empty()
+                    
+                    # Add response to chat history
+                    timestamp = datetime.now().strftime("%H:%M:%S")
+                    st.session_state.chat_history.append({
+                        "role": "assistant",
+                        "content": invalid_tech_response,
+                        "timestamp": timestamp
+                    })
+                    
+                    # Clear input field and exit function early
+                    st.session_state.user_input = ""
+                    return
+                
+                # Update tech stack with only recognized technologies
+                if recognized_techs:
+                    st.session_state.user_data["tech_stack"] = recognized_techs
+            
             # Get response from conversation manager
             response = st.session_state.conversation_manager.process_input(user_input)
             # Remove thinking indicator
@@ -403,11 +585,8 @@ def handle_user_input():
                     "timestamp": timestamp
                 })
                 
-                # Parse the questions and store them - IMPROVED VERSION
+                # Parse the questions and store them
                 questions_part = response.split("Here are your technical questions:")[1]
-                
-                # Improved regex to capture complete questions including the assessment notes
-                import re
                 
                 # Extract questions - improved pattern to capture full questions
                 questions = []
@@ -482,7 +661,6 @@ def handle_user_input():
 
         # Clear input field
         st.session_state.user_input = ""
-
 
 def start_session():
     """Start a new chat session."""
