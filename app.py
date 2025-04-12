@@ -350,6 +350,69 @@ def update_user_data(extracted_data):
         # For other fields, only update if the value is meaningful
         elif value:
             st.session_state.user_data[key] = value
+def validate_tech_stack(tech_stack_input):
+    """
+    Validates if the provided tech stack contains valid technologies.
+    Returns (is_valid, recognized_techs).
+    """
+    # Define a comprehensive list of valid technologies
+    valid_technologies = [
+        # Programming languages
+        "python", "javascript", "typescript", "java", "c#", "c++", "c", "ruby", "php", "swift", 
+        "kotlin", "go", "rust", "scala", "perl", "r", "dart", "lua", "haskell", "objective-c",
+        
+        # Web frameworks/libraries
+        "react", "angular", "vue", "svelte", "jquery", "express", "django", "flask", "spring", 
+        "asp.net", "laravel", "ruby on rails", "rails", "fastapi", "next.js", "nuxt", "gatsby",
+        
+        # Mobile frameworks
+        "react native", "flutter", "ionic", "xamarin", "android", "ios", "swift ui", "jetpack compose",
+        
+        # Databases
+        "sql", "mysql", "postgresql", "mongodb", "sqlite", "oracle", "sql server", "cassandra", 
+        "redis", "dynamodb", "firebase", "supabase", "neo4j", "couchdb", "mariadb",
+        
+        # Cloud/DevOps
+        "aws", "azure", "gcp", "google cloud", "docker", "kubernetes", "terraform", "jenkins", 
+        "circleci", "travis", "github actions", "gitlab ci", "ansible", "prometheus", "grafana",
+        
+        # AI/ML
+        "tensorflow", "pytorch", "scikit-learn", "keras", "pandas", "numpy", "matplotlib",
+        "machine learning", "deep learning", "nlp", "computer vision", "data science",
+        
+        # Other common tools/tech
+        "git", "linux", "node", "npm", "yarn", "webpack", "graphql", "rest", "soap",
+        "html", "css", "sass", "less", "bootstrap", "tailwind", "material ui"
+    ]
+    
+    # Normalize input
+    if isinstance(tech_stack_input, str):
+        # Split by common separators
+        tech_items = re.split(r'[,;/|]+', tech_stack_input.lower())
+    elif isinstance(tech_stack_input, list):
+        tech_items = [item.lower() for item in tech_stack_input]
+    else:
+        return False, []
+    
+    # Clean up each item
+    tech_items = [item.strip() for item in tech_items if item.strip()]
+    
+    # Find recognized technologies
+    recognized_techs = []
+    for tech in tech_items:
+        if tech in valid_technologies or any(valid_tech in tech for valid_tech in valid_technologies):
+            recognized_techs.append(tech)
+    
+    # Calculate match percentage
+    if not tech_items:
+        return False, []
+    
+    match_percentage = len(recognized_techs) / len(tech_items)
+    
+    # Consider valid if at least 25% of items are recognized technologies
+    is_valid = match_percentage >= 0.25 and len(recognized_techs) > 0
+    
+    return is_valid, recognized_techs
 def save_user_data():
     """
     Save the user data to a JSON file.
@@ -407,7 +470,6 @@ def save_user_data():
         json.dump(user_data, f, indent=4)
 
     return file_path
-
 def handle_user_input():
     """Process user input from the text input field."""
     user_input = st.session_state.user_input
@@ -449,6 +511,61 @@ def handle_user_input():
             # Display thinking indicator
             thinking_placeholder = st.empty()
             thinking_placeholder.markdown("*Thinking...*")
+            
+            # Check if this is the last question about tech stack and user has confirmed their info
+            is_tech_stack_confirmation = False
+            if len(st.session_state.chat_history) >= 2:
+                last_assistant_msg = None
+                for msg in reversed(st.session_state.chat_history):
+                    if msg["role"] == "assistant":
+                        last_assistant_msg = msg["content"]
+                        break
+                
+                # Check if the last message was asking for confirmation and user said yes
+                if last_assistant_msg and "Is this information correct?" in last_assistant_msg and user_input.lower() in ["yes", "correct", "that's right", "right"]:
+                    is_tech_stack_confirmation = True
+            
+            # If user confirmed their info, validate tech stack before proceeding to technical questions
+            if is_tech_stack_confirmation and "tech_stack" in st.session_state.user_data:
+                # Validate the tech stack
+                tech_stack = st.session_state.user_data["tech_stack"]
+                
+                # Convert to string if it's a list
+                if isinstance(tech_stack, list):
+                    tech_stack_str = ", ".join(tech_stack)
+                else:
+                    tech_stack_str = str(tech_stack)
+                
+                is_valid, recognized_techs = validate_tech_stack(tech_stack_str)
+                
+                if not is_valid:
+                    # Tech stack is invalid, inform the user
+                    invalid_tech_response = (
+                        "I noticed that your tech stack information doesn't contain recognizable technologies. "
+                        "This makes it difficult for me to generate relevant technical questions. "
+                        "Would you like to provide a valid list of technologies you're proficient in? "
+                        "For example: Python, JavaScript, React, SQL, etc. Please click on the reset button to start over "
+                    )
+                    
+                    # Remove thinking indicator
+                    thinking_placeholder.empty()
+                    
+                    # Add response to chat history
+                    timestamp = datetime.now().strftime("%H:%M:%S")
+                    st.session_state.chat_history.append({
+                        "role": "assistant",
+                        "content": invalid_tech_response,
+                        "timestamp": timestamp
+                    })
+                    
+                    # Clear input field and exit function early
+                    st.session_state.user_input = ""
+                    return
+                
+                # Update tech stack with only recognized technologies
+                if recognized_techs:
+                    st.session_state.user_data["tech_stack"] = recognized_techs
+            
             # Get response from conversation manager
             response = st.session_state.conversation_manager.process_input(user_input)
             # Remove thinking indicator
@@ -468,11 +585,8 @@ def handle_user_input():
                     "timestamp": timestamp
                 })
                 
-                # Parse the questions and store them - IMPROVED VERSION
+                # Parse the questions and store them
                 questions_part = response.split("Here are your technical questions:")[1]
-                
-                # Improved regex to capture complete questions including the assessment notes
-                import re
                 
                 # Extract questions - improved pattern to capture full questions
                 questions = []
@@ -547,7 +661,6 @@ def handle_user_input():
 
         # Clear input field
         st.session_state.user_input = ""
-
 
 def start_session():
     """Start a new chat session."""
